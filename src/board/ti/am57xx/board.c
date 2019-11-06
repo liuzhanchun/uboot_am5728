@@ -34,6 +34,7 @@
 
 #include "../common/board_detect.h"
 #include "mux_data.h"
+#include <lzc_config.h>
 
 #define AM572X_GPIO7_BASE           0x48051000
 #define AM572X_GPIO_OE_OFF          0x134
@@ -644,6 +645,66 @@ extern void display_logo(void);
 
 #endif
 
+FILEINFO strInitSpiFile[] =
+{
+	{INDEX_UBL, "UBL", "ubl_v10.bin", 0x0, 0x10000},
+	{INDEX_UBOOT, "UBOOT", "u-boot.bin", 0x10000, 0x70000 - 0x10000},
+	{INDEX_UBOOT_ENV, "UBOOT_ENV", "uboot_env", 0x70000, 0x80000 - 0x70000},
+	{INDEX_KERNEL, "KERNEL", "kernel_tq", 0x80000, 0x380000 - 0x80000},
+	{INDEX_SA_DSP, "SA_DSP", "rom-spec.bin", 0x5C0000, 0x5E0000 - 0x5C0000},
+
+};
+void UpdateFileUsb(int nIndex, const char *strInfo, const char *strName, unsigned long uStart, unsigned long uSize)
+{
+	int ret = 1;
+	char strCmd[100] = {0};
+	char strRes[100] = {0};
+	//判断这个文件是否存在		
+	sprintf(strCmd, "fatsize usb %s %s/%s", usb_part,UPDATE_PATH_FOLDER, strName);
+	ret=run_command(strCmd,0); 
+	printf("ret=%d\n",ret);
+
+	if(ret == 0)
+	{
+		////从U盘加载文件
+		sprintf(strCmd, "fatload usb %s %lx %s/%s", usb_part, FILE_SAVE_DDR_ADDR, UPDATE_PATH_FOLDER, strName);
+		run_command(strCmd,0);
+
+		sprintf(strRes, "%s existent \n", strName);
+		puts(strRes);
+
+	}
+	else
+	{
+		sprintf(strRes, "%s non-existent \n", strName);
+		puts(strRes);
+	}
+	
+
+}
+
+int UpdateSystemFromUSB()
+{
+	char strCmd[100] = {0};
+	sprintf(usb_part, "0:");
+	
+	run_command("usb start", 0);
+	run_command("usb part 0",0);
+
+	if (0 == my_do_fat_ls()) //判断是否有u盘插入
+	{
+		int i = 0;
+		sprintf(strCmd, "fatls usb %s %s", usb_part,UPDATE_PATH_FOLDER);
+		run_command(strCmd, 0);
+		for (i = 0; i < sizeof(strInitSpiFile) / sizeof(FILEINFO); i++)
+		{
+			UpdateFileUsb(strInitSpiFile[i].nIndex, strInitSpiFile[i].fileInfo, strInitSpiFile[i].fileName, strInitSpiFile[i].ufileStartAddr, strInitSpiFile[i].ufileSize);		
+		}
+		return 0;
+	}
+	return -1;
+}
+
 int board_late_init(void)
 {
 	char *idk_lcd;
@@ -677,6 +738,16 @@ int board_late_init(void)
 	am57xx_select_emmcbootpart();
 
 
+	#ifdef ENABLE_USB_UPDATA
+	if(UpdateSystemFromUSB()==0)
+	{
+		printf("update success\n");
+	}
+	else
+	{
+		printf("update fail\n");
+	}
+	#endif
 	
 
 	/* TL5728 som led2 */

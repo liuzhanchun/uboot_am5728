@@ -18,6 +18,9 @@
 #include <part.h>
 #include <fat.h>
 #include <fs.h>
+#include <lzc_config.h>
+
+char usb_part[5]="0:";
 
 int do_fat_size(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
@@ -64,6 +67,46 @@ U_BOOT_CMD(
 	"<interface> [<dev[:part]>] [directory]\n"
 	"    - list files from 'dev' on 'interface' in a 'directory'"
 );
+
+#ifdef ENABLE_USB_UPDATA
+
+int my_do_fat_ls()
+{
+	char *filename = NULL;
+	int dev=0;
+	int part=1;
+	char *ep;
+	char temp[5]="";
+
+	struct blk_desc *dev_desc = NULL;
+
+	sprintf(temp, "%d", usb_part_valid_num);
+	strcat(usb_part, temp);
+	dev = (int)simple_strtoul (usb_part, &ep, 16);
+	dev_desc=blk_get_dev("usb",dev);
+	
+	if (dev_desc==NULL) {
+		puts ("\n** Invalid boot device **\n");
+		return -1;
+	}
+	if (*ep) {
+		if (*ep != ':') {
+			puts ("\n** Invalid boot device, use `dev[:part]' **\n");
+			return -1;
+		}
+		part = (int)simple_strtoul(++ep, NULL, 16);
+	}
+	printf("usb_part_valid_num = %d\n", usb_part_valid_num);
+	printf("part = %d\n", part); 
+
+	if (fat_register_device(dev_desc,part)!=0) {
+		printf ("\n** Unable to use %s %d:%d for fatls **\n","usb",dev,part);
+		return -1;
+	}
+	return 0;
+
+}
+#endif
 
 static int do_fat_fsinfo(cmd_tbl_t *cmdtp, int flag, int argc,
 			 char * const argv[])

@@ -19,6 +19,9 @@
 #include <ide.h>
 #include <memalign.h>
 #include "part_dos.h"
+#include <lzc_config.h>
+
+int usb_part_valid_num = 0;
 
 #ifdef HAVE_BLOCK_DEVICE
 
@@ -52,6 +55,11 @@ static void print_one_part(dos_partition_t *p, lbaint_t ext_part_sector,
 {
 	lbaint_t lba_start = ext_part_sector + le32_to_int (p->start4);
 	lbaint_t lba_size  = le32_to_int (p->size4);
+
+#ifdef ENABLE_USB_UPDATA
+	usb_part_valid_num = part_num;
+	
+#endif
 
 	printf("%3d\t%-10" LBAFlength "u\t%-10" LBAFlength
 		"u\t%08x-%02x\t%02x%s%s\n",
