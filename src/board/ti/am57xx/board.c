@@ -647,14 +647,10 @@ extern void display_logo(void);
 
 FILEINFO strInitSpiFile[] =
 {
-	{INDEX_UBL, "UBL", "ubl_v10.bin", 0x0, 0x10000},
-	{INDEX_UBOOT, "UBOOT", "u-boot.bin", 0x10000, 0x70000 - 0x10000},
-	{INDEX_UBOOT_ENV, "UBOOT_ENV", "uboot_env", 0x70000, 0x80000 - 0x70000},
-	{INDEX_KERNEL, "KERNEL", "kernel_tq", 0x80000, 0x380000 - 0x80000},
-	{INDEX_SA_DSP, "SA_DSP", "rom-spec.bin", 0x5C0000, 0x5E0000 - 0x5C0000},
+	{INDEX_APP_QT, "QT", "qt_text",  0x100000},
 
 };
-void UpdateFileUsb(int nIndex, const char *strInfo, const char *strName, unsigned long uStart, unsigned long uSize)
+void UpdateFileUsb(int nIndex, const char *strInfo, const char *strName, unsigned long uSize)
 {
 	int ret = 1;
 	char strCmd[100] = {0};
@@ -670,9 +666,13 @@ void UpdateFileUsb(int nIndex, const char *strInfo, const char *strName, unsigne
 		sprintf(strCmd, "fatload usb %s %lx %s/%s", usb_part, FILE_SAVE_DDR_ADDR, UPDATE_PATH_FOLDER, strName);
 		run_command(strCmd,0);
 
+		//写入mmc
+		//ext4write mmc 1:2 0xc2000000  /333.txt 0xa
+		sprintf(strCmd, "ext4write mmc 1:2  %lx /%s %lx",FILE_SAVE_DDR_ADDR, strName, uSize);
+		run_command(strCmd,0);
+  
 		sprintf(strRes, "%s existent \n", strName);
 		puts(strRes);
-
 	}
 	else
 	{
@@ -698,7 +698,7 @@ int UpdateSystemFromUSB()
 		run_command(strCmd, 0);
 		for (i = 0; i < sizeof(strInitSpiFile) / sizeof(FILEINFO); i++)
 		{
-			UpdateFileUsb(strInitSpiFile[i].nIndex, strInitSpiFile[i].fileInfo, strInitSpiFile[i].fileName, strInitSpiFile[i].ufileStartAddr, strInitSpiFile[i].ufileSize);		
+			UpdateFileUsb(strInitSpiFile[i].nIndex, strInitSpiFile[i].fileInfo, strInitSpiFile[i].fileName, strInitSpiFile[i].ufileSize);		
 		}
 		return 0;
 	}

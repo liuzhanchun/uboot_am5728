@@ -12,7 +12,6 @@ struct s_init_file
 	int nIndex;						/*索引2.5.3.6之后添加该索引*/
 	const char *fileInfo;		    /*升级提示*/
 	const char *fileName;		    /*升级文件名*/
-	unsigned long ufileStartAddr;           /*起始地址*/
 	unsigned long ufileSize;                /*大小*/
 };
 typedef struct s_init_file FILEINFO;
@@ -20,7 +19,7 @@ typedef struct s_init_file FILEINFO;
 
 enum
 {
-	INDEX_UBL = 0,
+	INDEX_APP_QT = 0,
 	INDEX_UBOOT,
 	INDEX_UBOOT_ENV,
 	INDEX_KERNEL,
